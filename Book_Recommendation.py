@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import sklearn
 from sqlalchemy import create_engine
 import pickle
 from tensorflow.keras.models import load_model  # type: ignore
