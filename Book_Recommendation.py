@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
-import sklearn
 from sqlalchemy import create_engine
 import pickle
+from sklearn.feature_extraction.text import TfidfVectorizer
 from tensorflow.keras.models import load_model  # type: ignore
 from streamlit_lottie import st_lottie
 import json
