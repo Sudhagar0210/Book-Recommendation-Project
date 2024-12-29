@@ -94,7 +94,7 @@ elif st.session_state.page == "details":
                 genres,
                 cover_image_url
             FROM 
-                book_data
+                Book_data
             WHERE
                 {column_name} = %s
             GROUP BY 
@@ -115,7 +115,7 @@ elif st.session_state.page == "details":
                 published_year,
                 cover_image_url
             FROM 
-                book_data
+                Book_data
             WHERE 
                 genres IN ('{genre_list}')
             GROUP BY 
