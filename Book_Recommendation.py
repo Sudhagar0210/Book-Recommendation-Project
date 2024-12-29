@@ -10,8 +10,9 @@ import json
 def load_lottiefile(filepath: str):
     with open(filepath, "r") as f:
         return json.load(f)
-#Lottie animation
-lottie_animation = load_lottiefile("D:\\Tools\\VS Code\\MDT35\\Final_Project\\Book_Recommendation_Project\\Animation.json")  
+
+# Load the animation
+lottie_animation = load_lottiefile("Animation.json")
 
 # Initialize session 
 if "page" not in st.session_state:
@@ -19,7 +20,8 @@ if "page" not in st.session_state:
 
 # Database connection 
 def get_db_connection():
-    engine = create_engine("mssql+pyodbc://sa:123@Sudhakar\\SQLEXPRESS01/Local_database?driver=ODBC+Driver+17+for+SQL+Server")
+    #engine = create_engine("mssql+pyodbc://sa:123@Sudhakar\\SQLEXPRESS01/Local_database?driver=ODBC+Driver+17+for+SQL+Server")
+    engine = create_engine("mysql+mysqlconnector://admin:Sachin123#@localdb.cxkka06iqzik.ap-south-1.rds.amazonaws.com/Local_database")
     return engine
 
 # Load the trained model, vectorizer, and label binarizer
@@ -88,11 +90,12 @@ elif st.session_state.page == "details":
                 author_name AS Author,
                 Publisher_name AS Publisher, 
                 published_year,
-                genres
+                genres,
+                cover_image_url
             FROM 
                 book_data
             WHERE
-                {column_name} = ?
+                {column_name} = %s
             GROUP BY 
                 title, author_name, Publisher_name, published_year, genres;
         """
@@ -104,11 +107,12 @@ elif st.session_state.page == "details":
     def fetch_related_books(genres):
         genre_list = "','".join(genres)
         query = f"""
-            SELECT TOP 10
+            SELECT 
                 title AS book_name, 
                 author_name AS Author,
                 Publisher_name AS Publisher, 
-                published_year
+                published_year,
+                cover_image_url
             FROM 
                 book_data
             WHERE 
@@ -116,7 +120,7 @@ elif st.session_state.page == "details":
             GROUP BY 
                 title, author_name, Publisher_name, published_year
             HAVING 
-                COUNT(*) > 4
+                COUNT(*) > 4 Limit 10
         """
         engine = get_db_connection()
         with engine.connect() as connection:
