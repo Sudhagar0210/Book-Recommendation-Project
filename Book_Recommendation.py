@@ -94,11 +94,11 @@ elif st.session_state.page == "details":
                 genres,
                 cover_image_url
             FROM 
-                Book_data
+                book_data
             WHERE
                 {column_name} = %s
             GROUP BY 
-                title, author_name, Publisher_name, published_year, genres;
+                title, author_name, Publisher_name, published_year, genres,cover_image_url;
         """
         engine = get_db_connection()
         with engine.connect() as connection:
@@ -115,11 +115,11 @@ elif st.session_state.page == "details":
                 published_year,
                 cover_image_url
             FROM 
-                Book_data
+                book_data
             WHERE 
                 genres IN ('{genre_list}')
             GROUP BY 
-                title, author_name, Publisher_name, published_year
+                title, author_name, Publisher_name, published_year,cover_image_url
             HAVING 
                 COUNT(*) > 4 Limit 10
         """
