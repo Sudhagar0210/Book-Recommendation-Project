@@ -22,16 +22,26 @@ if "page" not in st.session_state:
 # Database connection 
 def get_db_connection():
     #engine = create_engine("mssql+pyodbc://sa:123@Sudhakar\\SQLEXPRESS01/Local_database?driver=ODBC+Driver+17+for+SQL+Server")
-    engine = create_engine("mysql+mysqlconnector://admin:Sachin123#@localdb.cxkka06iqzik.ap-south-1.rds.amazonaws.com/Local_database")
+    #engine = create_engine("mysql+mysqlconnector://admin:Sachin123#@localdb.cxkka06iqzik.ap-south-1.rds.amazonaws.com/Local_database")
+    engine = create_engine("mysql+mysqlconnector://root:sachin%400210@127.0.0.1:3306/gravity_books")
     return engine
 
-# Load the trained model, vectorizer, and label binarizer
-model = load_model("book_genre_model.keras")
-with open("vectorizer.pkl", "rb") as f:
-    vectorizer = pickle.load(f)
-with open("label_binarizer.pkl", "rb") as f:
-    label_binarizer = pickle.load(f)
+# # Load the trained model, vectorizer, and label binarizer
+# model = load_model("book_genre_model.keras")
+# with open("vectorizer.pkl", "rb") as f:
+#     vectorizer = pickle.load(f)
+# with open("label_binarizer.pkl", "rb") as f:
+#     label_binarizer = pickle.load(f)
+# Load models and vectorizer only once
 
+if "model_loaded" not in st.session_state:
+    st.session_state.model = load_model("book_genre_model.keras")
+    with open("vectorizer.pkl", "rb") as f:
+        st.session_state.vectorizer = pickle.load(f)
+    with open("label_binarizer.pkl", "rb") as f:
+        st.session_state.label_binarizer = pickle.load(f)
+    st.session_state.model_loaded = True
+    
 # Page Navigation
 if st.session_state.page == "home":
     st.title("Welcome to Book Recommendation System")
@@ -85,24 +95,24 @@ elif st.session_state.page == "details":
         if not column_name:
             st.error("Invalid input option!")
             return pd.DataFrame()
+        search_value = f"%{value}%"
         query = f"""
             SELECT 
                 title AS book_name, 
                 author_name AS Author,
                 Publisher_name AS Publisher, 
                 published_year,
-                genres,
-                cover_image_url
+                genres                
             FROM 
                 book_data
             WHERE
-                {column_name} = %s
+                {column_name} Like %s
             GROUP BY 
-                title, author_name, Publisher_name, published_year, genres,cover_image_url;
+                title, author_name, Publisher_name, published_year, genres;
         """
         engine = get_db_connection()
         with engine.connect() as connection:
-            return pd.read_sql(query, connection, params=(value,))
+            return pd.read_sql(query, connection, params=(search_value,))
 
     # Fetch related books
     def fetch_related_books(genres):
@@ -112,14 +122,13 @@ elif st.session_state.page == "details":
                 title AS book_name, 
                 author_name AS Author,
                 Publisher_name AS Publisher, 
-                published_year,
-                cover_image_url
+                published_year                
             FROM 
                 book_data
             WHERE 
                 genres IN ('{genre_list}')
             GROUP BY 
-                title, author_name, Publisher_name, published_year,cover_image_url
+                title, author_name, Publisher_name, published_year
             HAVING 
                 COUNT(*) > 4 Limit 10
         """
@@ -133,17 +142,17 @@ elif st.session_state.page == "details":
             st.warning(f"Please enter a valid {input_option}!")
         else:
             single_input = prepare_input(input_option, input_value)
-            single_input_tfidf = vectorizer.transform([single_input]).toarray()
+            single_input_tfidf = st.session_state.vectorizer.transform([single_input]).toarray()
             try:
             # Predict the genre
-                prediction = model.predict(single_input_tfidf)
-                predicted_genre = label_binarizer.inverse_transform((prediction > 0.5).astype(int))
+                prediction = st.session_state.model.predict(single_input_tfidf)
+                predicted_genre = st.session_state.label_binarizer.inverse_transform((prediction > 0.5).astype(int))
             except IndexError:
                 st.error("Prediction failed: Try different input.")
                 predicted_genre = []
 
             if predicted_genre:
-                #st.write(f"Predicted Genres: {', '.join(predicted_genre)}")
+                st.write(f"Predicted Genres: {', '.join(predicted_genre)}")
                 book_details = fetch_book_details(input_option, input_value)
                 if not book_details.empty:
                     st.subheader("Book Details:")
