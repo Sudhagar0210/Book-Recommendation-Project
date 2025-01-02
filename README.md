@@ -3,7 +3,6 @@
 # Problem Statement:
 Leverage neural networks to analyze and predict customer behavior, recommend books, and forecast demand in the publishing industry, improving both customer experience and sales.
 
-
 This project is a Streamlit-based web application designed to recommend books and provide book-related details. It uses a machine learning model, a database, and Lottie animations for a user-friendly experience.
 
 # Features
