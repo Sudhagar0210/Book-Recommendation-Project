@@ -188,7 +188,7 @@ elif st.session_state.page == "details":
                 predicted_genre = []
 
             if predicted_genre:
-                st.write(f"Predicted Genres: {', '.join(predicted_genre)}")
+                #st.write(f"Predicted Genres: {', '.join(predicted_genre)}")
                 book_details = fetch_book_details(input_option, input_value)
                 if not book_details.empty:
                     st.subheader("Book Details:")
