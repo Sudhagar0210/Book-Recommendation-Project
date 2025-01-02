@@ -22,17 +22,11 @@ if "page" not in st.session_state:
 # Database connection 
 def get_db_connection():
     #engine = create_engine("mssql+pyodbc://sa:123@Sudhakar\\SQLEXPRESS01/Local_database?driver=ODBC+Driver+17+for+SQL+Server")
-    #engine = create_engine("mysql+mysqlconnector://admin:Sachin123#@localdb.cxkka06iqzik.ap-south-1.rds.amazonaws.com/Local_database")
-    engine = create_engine("mysql+mysqlconnector://root:sachin%400210@127.0.0.1:3306/gravity_books")
+    engine = create_engine("mysql+mysqlconnector://admin:Sachin123#@localdb.cxkka06iqzik.ap-south-1.rds.amazonaws.com/Local_database")
+    #engine = create_engine("mysql+mysqlconnector://root:sachin%400210@127.0.0.1:3306/gravity_books")
     return engine
 
-# # Load the trained model, vectorizer, and label binarizer
-# model = load_model("book_genre_model.keras")
-# with open("vectorizer.pkl", "rb") as f:
-#     vectorizer = pickle.load(f)
-# with open("label_binarizer.pkl", "rb") as f:
-#     label_binarizer = pickle.load(f)
-# Load models and vectorizer only once
+
 
 if "model_loaded" not in st.session_state:
     st.session_state.model = load_model("book_genre_model.keras")
@@ -44,14 +38,21 @@ if "model_loaded" not in st.session_state:
     
 # Page Navigation
 if st.session_state.page == "home":
-    st.title("Welcome to Book Recommendation System")
+    st.title("Welcome to Book Recommendation System")  
+       
+    # Create layout with columns
+    col1, col2 = st.columns([4, 1])  
+
+    with col2:
+        st.write("")
+        st.write("")
+        if st.button("➡ Search Book", key="go_button"):
+            st.session_state.page = "details"
+            
+    with col1:
+        # Display Animation
+        st_lottie(lottie_animation, height=425, key="home_animation")
     
-    # Display Animation
-    st_lottie(lottie_animation, height=425, key="home_animation")
-    
-    # Navigation button
-    if st.button("➡ Go to Book Search"):
-        st.session_state.page = "details"
 
 elif st.session_state.page == "details":
     st.title("Book Details and Recommendations")
@@ -102,39 +103,74 @@ elif st.session_state.page == "details":
                 author_name AS Author,
                 Publisher_name AS Publisher, 
                 published_year,
-                genres                
+                genres,
+                cover_image_url                
             FROM 
                 book_data
             WHERE
                 {column_name} Like %s
             GROUP BY 
-                title, author_name, Publisher_name, published_year, genres;
+                title, author_name, Publisher_name, published_year, genres,cover_image_url;
         """
         engine = get_db_connection()
         with engine.connect() as connection:
             return pd.read_sql(query, connection, params=(search_value,))
 
-    # Fetch related books
+    
+    # Fetch related books with a fallback
     def fetch_related_books(genres):
         genre_list = "','".join(genres)
-        query = f"""
+        
+        # Primary query
+        primary_query = f"""
             SELECT 
                 title AS book_name, 
                 author_name AS Author,
                 Publisher_name AS Publisher, 
-                published_year                
+                published_year,
+                cover_image_url                
             FROM 
                 book_data
             WHERE 
                 genres IN ('{genre_list}')
             GROUP BY 
-                title, author_name, Publisher_name, published_year
+                title, author_name, Publisher_name, published_year, cover_image_url
             HAVING 
-                COUNT(*) > 4 Limit 10
+                COUNT(*) > 4 
+            LIMIT 10
         """
+        
+        # Fallback query
+        fallback_query = f"""
+            SELECT 
+                title AS book_name, 
+                author_name AS Author,
+                Publisher_name AS Publisher, 
+                published_year,
+                cover_image_url                
+            FROM 
+                book_data
+            WHERE 
+                genres IN ('{genre_list}')
+            GROUP BY 
+                title, author_name, Publisher_name, published_year, cover_image_url
+            ORDER BY 
+                book_id ASC
+            LIMIT 10
+        """
+        
+        # Establish database connection
         engine = get_db_connection()
         with engine.connect() as connection:
-            return pd.read_sql(query, connection)
+            # Execute primary query
+            related_data = pd.read_sql(primary_query, connection)
+            
+            # fallback query
+            if related_data.empty:
+                related_data = pd.read_sql(fallback_query, connection)        
+        return related_data  
+    
+    
 
     # Search functionality
     if st.button("Search Book"):
