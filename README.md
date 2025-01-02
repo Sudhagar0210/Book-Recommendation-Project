@@ -156,6 +156,7 @@ This project is a Streamlit-based web application designed to recommend books an
 # Author
 
    * Developed by [Sudhagar Chandar]. For queries, contact [sudhakarchandar0210@gmail.com].
+     
 
 
 
